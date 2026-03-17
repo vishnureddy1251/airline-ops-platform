@@ -1,0 +1,7 @@
+package com.airline.ai.entity.enums;
+
+public class MilesTransactionType {
+    EARN_FLIGHT, EARN_PARTNER, EARN_BONUS, EARN_PROMOTION,
+    REDEEM_FLIGHT, REDEEM_UPGRADE, REDEEM_PARTNER,
+    EXPIRE, TRANSFER_IN, TRANSFER_OUT, ADJUSTMENT
+}
