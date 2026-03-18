@@ -3,6 +3,8 @@ package com.airline.ai.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -50,5 +52,32 @@ public class GlobalExceptionHandler {
                 .message("Request validation failed")
                 .path(req.getDescription(false).replace("uri=",""))
                 .fieldErrors(errors).build());
+    }
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCreds(BadCredentialsException ex, WebRequest req) {
+        return buildError(HttpStatus.UNAUTHORIZED, "Invalid email or password", req);
+    }
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, WebRequest req) {
+        return buildError(HttpStatus.FORBIDDEN, "Access denied: insufficient permissions", req);
+    }
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<ErrorResponse> handleCircuitBreaker(CallNotPermittedException ex, WebRequest req) {
+        return buildError(HttpStatus.SERVICE_UNAVAILABLE, "Service temporarily unavailable", req);
+    }
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ErrorResponse> handleRateLimit(RequestNotPermitted ex, WebRequest req) {
+        return buildError(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please slow down.", req);
+    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneral(Exception ex, WebRequest req) {
+        log.error("Unexpected error", ex);
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", req);
+    }
+    private ResponseEntity<ErrorResponse> buildError(HttpStatus status, String msg, WebRequest req) {
+        return ResponseEntity.status(status).body(ErrorResponse.builder()
+                .timestamp(LocalDateTime.now()).status(status.value())
+                .error(status.getReasonPhrase()).message(msg)
+                .path(req.getDescription(false).replace("uri=","")).build());
     }
 }
